@@ -1,0 +1,27 @@
+[project]
+name = "kaos-ast"
+version = "0.1.0"
+description = "A custom AST-based context provider using cocoindex-code and code_ast"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cocoindex-code[full]",
+    "code-ast",
+    "tree-sitter>=0.22",
+    "tree-sitter-python",
+    "tree-sitter-javascript",
+    "tree-sitter-typescript",
+    "tree-sitter-go",
+    "tree-sitter-rust",
+    "tree-sitter-c",
+    "tree-sitter-cpp",
+    "pyyaml",
+    "urllib3>=2.6.3",
+]
+
+[project.scripts]
+kaos-ast = "kaos_ast.main:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
