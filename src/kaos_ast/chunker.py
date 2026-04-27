@@ -4,6 +4,9 @@ from pathlib import Path
 import code_ast
 from code_ast import ASTVisitor
 
+import tree_sitter
+import tree_sitter_typescript as _tst_pkg
+
 # Mock or import Chunk from cocoindex_code.chunking
 try:
     from cocoindex_code.chunking import Chunk, TextPosition
@@ -105,41 +108,57 @@ class KaosChunkVisitor(ASTVisitor):
     # so the visit_function_definition handler above covers both languages.
 
 
+def _whole_file_chunk(content: str) -> Chunk:
+    lines = content.splitlines()
+    start_pos = TextPosition(byte_offset=0, char_offset=0, line=1, column=0)
+    end_pos = TextPosition(
+        byte_offset=len(content.encode('utf-8')),
+        char_offset=len(content),
+        line=len(lines) if lines else 1,
+        column=len(lines[-1]) if lines else 0
+    )
+    return Chunk(text=content, start=start_pos, end=end_pos)
+
+
+def _chunk_typescript(content: str, path: Path, lang: str) -> list[Chunk]:
+    # tree_sitter_typescript ships TWO grammars (typescript + tsx) and exposes
+    # them as language_typescript() / language_tsx() instead of the conventional
+    # top-level .language() that code_ast._load_language expects. Bypass code_ast
+    # for these two languages and drive tree_sitter directly.
+    if lang == 'tsx':
+        ts_lang = tree_sitter.Language(_tst_pkg.language_tsx())
+    else:
+        ts_lang = tree_sitter.Language(_tst_pkg.language_typescript())
+    parser = tree_sitter.Parser(ts_lang)
+    tree = parser.parse(content.encode('utf-8'))
+    visitor = KaosChunkVisitor(content, path)
+    visitor(tree.root_node)
+    return visitor.chunks
+
+
 def custom_ast_chunker(path: Path, content: str) -> tuple[str | None, list[Chunk]]:
     ext = path.suffix.lower()
     lang = EXT_TO_LANG.get(ext)
-    
+
     if not lang:
         # Fallback to default if language is not supported
         return None, []
 
     try:
-        source_ast = code_ast.ast(content, lang=lang)
-        visitor = KaosChunkVisitor(content, path)
-        source_ast.visit(visitor)
-        
-        chunks = visitor.chunks
-        
+        if lang in ('typescript', 'tsx'):
+            chunks = _chunk_typescript(content, path, lang)
+        else:
+            source_ast = code_ast.ast(content, lang=lang)
+            visitor = KaosChunkVisitor(content, path)
+            source_ast.visit(visitor)
+            chunks = visitor.chunks
+
         # If no semantic chunks were found, fallback to returning the whole file as one chunk
         if not chunks:
-            lines = content.splitlines()
-            start_pos = TextPosition(byte_offset=0, char_offset=0, line=1, column=0)
-            end_pos = TextPosition(
-                byte_offset=len(content.encode('utf-8')),
-                char_offset=len(content),
-                line=len(lines) if lines else 1,
-                column=len(lines[-1]) if lines else 0
-            )
-            chunks = [
-                Chunk(
-                    text=content,
-                    start=start_pos,
-                    end=end_pos
-                )
-            ]
-            
+            chunks = [_whole_file_chunk(content)]
+
         return lang, chunks
     except Exception as e:
-        print(f"Error parsing {path} with code_ast: {e}", file=__import__('sys').stderr)
+        print(f"Error parsing {path} (lang={lang}): {e}", file=__import__('sys').stderr)
         return None, []
 
