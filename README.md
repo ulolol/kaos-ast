@@ -21,6 +21,25 @@ Kaos AST brings together two powerful tools—[`code_ast`](https://github.com/ce
 
 **The Result:** A zero-config, plug-and-play MCP server that understands the exact boundaries of your functions, classes, and methods. When an AI agent searches your codebase, it receives perfectly bounded, semantically complete snippets. This drastically improves the relevance of the retrieved context, eliminates hallucinations caused by truncated code, and significantly reduces token consumption.
 
+## Reality by Numbers
+
+Kaos AST isn't just about better parsing; it's about making your AI coding agent drastically more efficient.
+
+| Metric | Improvement |
+| :--- | :--- |
+| **Tool Calls** | **~87% reduction** |
+| **Context Relevance** | **70% more relevant** in a single call |
+
+![Tool Call Reduction](screens/kaos-ast-reduction.png)
+
+| Metric | Improvement |
+| :--- | :--- |
+| **Token Usage** | **~32% reduction** |
+
+> [!TIP]
+> The **𝗖𝗼𝘀𝘁 𝗦𝗮𝘃𝗶𝗻𝗴𝘀 𝗰𝗼𝗺𝗽𝗼𝘂𝗻𝗱** because you don't have to make multiple calls to find the right context.
+
+![Token Reduction](screens/kaos-ast-token.png)
 
 ## Installation / Usage
 
@@ -156,6 +175,25 @@ Add to `~/.continue/config.json`:
   }
 }
 ```
+
+## Tools Showcase
+
+Kaos AST exposes three primary tools to your AI agent to manage and search your codebase.
+
+### 🔍 `search`
+Semantic code search across the entire codebase. It finds code by meaning, not just text matching. Use this to find implementations, understand how features work, or locate related code without knowing exact keywords.
+
+![search tool](screens/kaos-ast_search.png)
+
+### 📊 `status`
+Check the current indexing status of the codebase. Returns whether an index exists, how many files and code chunks are indexed, which languages were detected, and if indexing is in progress.
+
+![status tool](screens/kaos-ast_status.png)
+
+### 📂 `set_roots`
+Override the currently indexed workspace directories. Use this if the auto-detected roots are incorrect, or if you want to extend semantic search to cover additional external libraries.
+
+![set_roots tool](screens/kaos-ast_set_roots.png)
 
 ## Project Structure
 
